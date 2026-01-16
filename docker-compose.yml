@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Your_strong_password_123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Your_strong_password_123!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  catalogapi:
+    build: .
+    depends_on:
+      - rabbitmq
+      - sqlserver
+    environment:
+      - RABBITMQ__HOST=rabbitmq
+      - RABBITMQ__VIRTUALHOST=/
+      - RABBITMQ__USERNAME=guest
+      - RABBITMQ__PASSWORD=guest
+      - JWT__KEY=very_secret_demo_key_please_change
+      # SQL Server connection settings (adjust to your app's configuration keys)
+      - SQLSERVER__HOST=sqlserver
+      - SQLSERVER__PORT=1433
+      - SQLSERVER__USERNAME=sa
+      - SQLSERVER__PASSWORD=Your_strong_password_123!
+      - ConnectionStrings__Default=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Your_strong_password_123!;TrustServerCertificate=True
+    ports:
+      - "5000:80"
