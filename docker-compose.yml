@@ -2,38 +2,96 @@ version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: "gabs"
+      RABBITMQ_DEFAULT_PASS: "gabs"
     ports:
       - "15672:15672"
       - "5672:5672"
-  sqlserver:
+    
+  sql-users:
     image: mcr.microsoft.com/mssql/server:2019-latest
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Your_strong_password_123!
-      - MSSQL_PID=Developer
+    container_name: sql-users
+    hostname: sql-users
     ports:
-      - "1433:1433"
-    healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Your_strong_password_123!", "-Q", "SELECT 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-  catalogapi:
-    build: .
-    depends_on:
-      - rabbitmq
-      - sqlserver
+      - "14331:1433"
     environment:
-      - RABBITMQ__HOST=rabbitmq
-      - RABBITMQ__VIRTUALHOST=/
-      - RABBITMQ__USERNAME=guest
-      - RABBITMQ__PASSWORD=guest
-      - JWT__KEY=very_secret_demo_key_please_change
-      # SQL Server connection settings (adjust to your app's configuration keys)
-      - SQLSERVER__HOST=sqlserver
-      - SQLSERVER__PORT=1433
-      - SQLSERVER__USERNAME=sa
-      - SQLSERVER__PASSWORD=Your_strong_password_123!
-      - ConnectionStrings__Default=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Your_strong_password_123!;TrustServerCertificate=True
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "StrongPassword!123"
+    volumes:
+      - sql-users-data:/var/opt/mssql
+    networks:
+      - backend
+
+  sql-orders:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql-orders
+    hostname: sql-orders
     ports:
-      - "5000:80"
+      - "14332:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "StrongPassword!123"
+    volumes:
+      - sql-orders-data:/var/opt/mssql
+    networks:
+      - backend
+
+  sql-payments:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql-payments
+    hostname: sql-payments
+    ports:
+      - "14333:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "StrongPassword!123"
+    volumes:
+      - sql-payments-data:/var/opt/mssql
+    networks:
+      - backend
+
+  sql-notifications:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql-notifications
+    hostname: sql-notifications
+    ports:
+      - "14334:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "StrongPassword!123"
+    volumes:
+      - sql-notifications-data:/var/opt/mssql
+    networks:
+      - backend
+
+volumes:
+  sql-users-data:
+  sql-orders-data:
+  sql-payments-data:
+  sql-notifications-data:
+
+networks:
+  backend:
+    driver: bridge
+
+
+  # catalogapi:
+  #   build: .
+  #   depends_on:
+  #     - rabbitmq
+  #     - sqlserver
+  #   environment:
+  #     - RABBITMQ__HOST=rabbitmq
+  #     - RABBITMQ__VIRTUALHOST=/
+  #     - RABBITMQ__USERNAME=guest
+  #     - RABBITMQ__PASSWORD=guest
+  #     - JWT__KEY=very_secret_demo_key_please_change
+  #     # SQL Server connection settings (adjust to your app's configuration keys)
+  #     - SQLSERVER__HOST=sqlserver
+  #     - SQLSERVER__PORT=1433
+  #     - SQLSERVER__USERNAME=sa
+  #     - SQLSERVER__PASSWORD=Your_strong_password_123!
+  #     - ConnectionStrings__Default=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Your_strong_password_123!;TrustServerCertificate=True
+  #   ports:
+  #     - "5000:80"
