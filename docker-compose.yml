@@ -1,10 +1,9 @@
-version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
     environment:
-      RABBITMQ_DEFAULT_USER: "gabs"
-      RABBITMQ_DEFAULT_PASS: "gabs"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
     ports:
       - "15672:15672"
       - "5672:5672"
@@ -51,25 +50,10 @@ services:
     networks:
       - backend
 
-  sql-notifications:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql-notifications
-    hostname: sql-notifications
-    ports:
-      - "14334:1433"
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "StrongPassword!123"
-    volumes:
-      - sql-notifications-data:/var/opt/mssql
-    networks:
-      - backend
-
 volumes:
   sql-users-data:
   sql-orders-data:
   sql-payments-data:
-  sql-notifications-data:
 
 networks:
   backend:
