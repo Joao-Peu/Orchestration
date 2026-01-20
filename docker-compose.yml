@@ -63,10 +63,11 @@ services:
       - backend
 
   users-api:
+    image: users-api:latest
     build:
       context: ../UsersAPI/src/UsersAPI
       dockerfile: Dockerfile
-    container_name: users-api
+    container_name: users-api:latest
     ports:
       - "5001:80"
     environment:
@@ -85,10 +86,11 @@ services:
     restart: on-failure
 
   catalog-api:
+    image: catalog-api:latest
     build:
       context: ../CatalogAPI/CatalogAPI
       dockerfile: Dockerfile
-    container_name: catalog-api
+    container_name: catalog-api:latest
     ports:
       - "5002:80"
     environment:
@@ -107,10 +109,11 @@ services:
     restart: on-failure
 
   payments-api:
+    image: payments-api:latest
     build:
       context: ../PaymentsAPI/PaymentsAPI
       dockerfile: Dockerfile
-    container_name: payments-api
+    container_name: payments-api:latest
     ports:
       - "5003:80"
     environment:
@@ -128,18 +131,19 @@ services:
     restart: on-failure
 
   notifications-api:
+    image: notifications-api:latest
     build:
       context: ../NotificationsAPI/NotificationsAPI
       dockerfile: Dockerfile
-    container_name: notifications-api
+    container_name: notifications-api:latest
     ports:
       - "5004:80"
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_URLS: "http://+:80"
-      RabbitMq__HostName: "rabbitmq"
-      RabbitMq__UserName: "fiap"
-      RabbitMq__Password: "fiap123"
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "fiap"
+      RabbitMQ__Password: "fiap123"
     depends_on:
       rabbitmq:
         condition: service_healthy

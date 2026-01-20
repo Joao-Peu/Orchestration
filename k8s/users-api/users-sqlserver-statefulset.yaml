@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sql-users
+  namespace: microservices
+  labels:
+    app: sql-users
+    tier: database
+    component: users
+spec:
+  serviceName: sql-users-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sql-users
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: sql-users
+        tier: database
+        component: users
+    spec:
+      containers:
+      - name: mssql
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        ports:
+        - containerPort: 1433
+          name: mssql
+          protocol: TCP
+        
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        
+        - name: MSSQL_SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sqlserver-credentials
+              key: sa-password
+        
+        - name: MSSQL_PID
+          value: "Developer"
+        
+        volumeMounts:
+        - name: mssql-data
+          mountPath: /var/opt/mssql
+        
+        
+        
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1000m"
+        
+        livenessProbe: 
+          tcpSocket:
+            port: 1433
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        
+        readinessProbe:
+          tcpSocket:
+            port: 1433
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+      volumes:
+          - name: mssql-data
+            persistentVolumeClaim:
+              claimName: sql-users-pvc
+  
+      
