@@ -1,13 +1,25 @@
 services:
+  
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_USER: "fiap"
+      RABBITMQ_DEFAULT_PASS: "fiap123"
     ports:
-      - "15672:15672"
-      - "5672:5672"
-    
+      - "15672:15672"  # Management UI
+      - "5672:5672"    # AMQP
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   sql-users:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sql-users
@@ -22,17 +34,17 @@ services:
     networks:
       - backend
 
-  sql-orders:
+  sql-catalog:
     image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql-orders
-    hostname: sql-orders
+    container_name: sql-catalog
+    hostname: sql-catalog
     ports:
       - "14332:1433"
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "StrongPassword!123"
     volumes:
-      - sql-orders-data:/var/opt/mssql
+      - sql-catalog-data:/var/opt/mssql
     networks:
       - backend
 
@@ -50,32 +62,102 @@ services:
     networks:
       - backend
 
+  users-api:
+    build:
+      context: ../UsersAPI/src/UsersAPI
+      dockerfile: Dockerfile
+    container_name: users-api
+    ports:
+      - "5001:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:80"
+      Jwt__Key: "Q7KcQm8B+8p4zZP0P5B9GZzQ3T6z0sZq6GQ0m2ZP9Ys="
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "fiap"
+      RabbitMQ__Password: "fiap123"
+      ConnectionStrings__UserDb: "Server=sql-users,1433;Database=UsersDb;User Id=sa;Password=StrongPassword!123;TrustServerCertificate=True;"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: on-failure
+
+  catalog-api:
+    build:
+      context: ../CatalogAPI/CatalogAPI
+      dockerfile: Dockerfile
+    container_name: catalog-api
+    ports:
+      - "5002:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:80"
+      Jwt__Key: "Q7KcQm8B+8p4zZP0P5B9GZzQ3T6z0sZq6GQ0m2ZP9Ys="
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "fiap"
+      RabbitMQ__Password: "fiap123"
+      ConnectionStrings__CatalogDb: "Server=sql-catalog,1433;Database=CatalogDb;User Id=sa;Password=StrongPassword!123;TrustServerCertificate=True;"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: on-failure
+
+  payments-api:
+    build:
+      context: ../PaymentsAPI/PaymentsAPI
+      dockerfile: Dockerfile
+    container_name: payments-api
+    ports:
+      - "5003:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:80"
+      ConnectionStrings__PaymentsDb: "Server=sql-payments,1433;Database=PaymentsDb;User Id=sa;Password=StrongPassword!123;TrustServerCertificate=True;"
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "fiap"
+      RabbitMQ__Password: "fiap123"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: on-failure
+
+  notifications-api:
+    build:
+      context: ../NotificationsAPI/NotificationsAPI
+      dockerfile: Dockerfile
+    container_name: notifications-api
+    ports:
+      - "5004:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:80"
+      RabbitMq__HostName: "rabbitmq"
+      RabbitMq__UserName: "fiap"
+      RabbitMq__Password: "fiap123"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: on-failure
+
 volumes:
+  rabbitmq-data:
+    driver: local
   sql-users-data:
-  sql-orders-data:
+    driver: local
+  sql-catalog-data:
+    driver: local
   sql-payments-data:
+    driver: local
+
 
 networks:
   backend:
     driver: bridge
-
-
-  # catalogapi:
-  #   build: .
-  #   depends_on:
-  #     - rabbitmq
-  #     - sqlserver
-  #   environment:
-  #     - RABBITMQ__HOST=rabbitmq
-  #     - RABBITMQ__VIRTUALHOST=/
-  #     - RABBITMQ__USERNAME=guest
-  #     - RABBITMQ__PASSWORD=guest
-  #     - JWT__KEY=very_secret_demo_key_please_change
-  #     # SQL Server connection settings (adjust to your app's configuration keys)
-  #     - SQLSERVER__HOST=sqlserver
-  #     - SQLSERVER__PORT=1433
-  #     - SQLSERVER__USERNAME=sa
-  #     - SQLSERVER__PASSWORD=Your_strong_password_123!
-  #     - ConnectionStrings__Default=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Your_strong_password_123!;TrustServerCertificate=True
-  #   ports:
-  #     - "5000:80"
