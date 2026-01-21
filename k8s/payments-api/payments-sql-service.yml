@@ -1,0 +1,12 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: sql-payments
+  namespace: microservices
+spec:
+  selector:
+    app: sql-payments
+  ports:
+    - port: 1433
+      targetPort: 1433
+  type: ClusterIP
