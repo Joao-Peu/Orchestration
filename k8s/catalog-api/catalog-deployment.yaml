@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogapi
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogapi
+  template:
+    metadata:
+      labels:
+        app: catalogapi
+    spec:
+      containers:
+        - name: catalogapi
+          image: catalog-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-api-config
+                  key: ASPNETCORE_ENVIRONMENT
+        
+            - name: ASPNETCORE_URLS
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-api-config
+                  key: ASPNETCORE_URLS
+
+            - name: RabbitMQ__Host
+              valueFrom:
+                configMapKeyRef:
+                  name: rabbitmq-config
+                  key: hostname
+
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: username
+
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
+
+            - name: JWT__Key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: key
+
+            - name: ConnectionStrings__CatalogDb
+              valueFrom:
+                secretKeyRef:
+                  name: catalogapi-secret
+                  key: ConnectionStrings__CatalogDb

@@ -46,8 +46,6 @@ spec:
         - name: mssql-data
           mountPath: /var/opt/mssql
         
-        
-        
         resources:
           requests:
             memory: "2Gi"
@@ -73,9 +71,8 @@ spec:
           timeoutSeconds: 3
           failureThreshold: 3
           successThreshold: 1
+
       volumes:
           - name: mssql-data
             persistentVolumeClaim:
               claimName: sql-users-pvc
-  
-      

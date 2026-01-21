@@ -1,0 +1,12 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: catalogapi-service
+  namespace: microservices
+spec:
+  selector:
+    app: catalogapi-service
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
