@@ -67,7 +67,7 @@ services:
     build:
       context: ../UsersAPI/src/UsersAPI
       dockerfile: Dockerfile
-    container_name: users-api:latest
+    container_name: users-api
     ports:
       - "5001:80"
     environment:
@@ -90,7 +90,7 @@ services:
     build:
       context: ../CatalogAPI/CatalogAPI
       dockerfile: Dockerfile
-    container_name: catalog-api:latest
+    container_name: catalog-api
     ports:
       - "5002:80"
     environment:
@@ -113,7 +113,7 @@ services:
     build:
       context: ../PaymentsAPI/PaymentsAPI
       dockerfile: Dockerfile
-    container_name: payments-api:latest
+    container_name: payments-api
     ports:
       - "5003:80"
     environment:
@@ -135,7 +135,7 @@ services:
     build:
       context: ../NotificationsAPI/NotificationsAPI
       dockerfile: Dockerfile
-    container_name: notifications-api:latest
+    container_name: notifications-api
     ports:
       - "5004:80"
     environment:
